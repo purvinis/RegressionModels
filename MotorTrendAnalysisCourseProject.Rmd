@@ -21,7 +21,7 @@ The analysis used multiple regression analysis to find a relationship between MP
 ```{r Initialization, include = FALSE}
 data(mtcars)
 #The analysis requires loading the data(mtcars) and needed packages of ggplot2 and GGally
-#library(ggplot2)
+library(ggplot2)
 #install.packages("GGally")
 
 library(GGally)
@@ -45,7 +45,7 @@ fit5 <- lm(mpg ~ am +  hp ,data=mtcars)
 signif(summary(fit5)$coef[,c(1,4)],digits =5)
 # The model fit5 has the lowest p-values for the regresssors of all models attempted.
 ```
-The best model is fit5. The model becomes: mpg = 26.585 + 5.2771am + -0.058888hp.The model means that mpg will increase by 5.2771 when going from automatic to manual transmission, for a given (constant) hp. It also means that mpg will decrease by 0.058888 for each increment of hp, if the transmission type is held constant.
+The best model is fit5 <- lm(mpg ~ am + hp, data = mtcars). The model becomes: mpg = 26.585 + 5.2771am + -0.058888hp.The model means that mpg will increase by 5.2771 when going from automatic to manual transmission, for a given (constant) hp. It also means that mpg will decrease by 0.058888 for each increment of hp, if the transmission type is held constant.
 
 ### Diagnostics and Checking Assumptions
 Plots of the residuals versus fitted values and residuals versus independent variables are a standard method of checking if model assumptions are violated. The assumptions are 1) the errors are independent, 2) the errors have mean 0, 3) the errors all have about the same variance, and 4) the errors are normally distributed. The plots do not have any serious violations of the model assumptions.The plots may be viewed in the appendix.
@@ -71,7 +71,7 @@ points(c(52:335),ci0[,1],col = "black", bg = "black",pch = 21)
 points(c(52:335),ci0[,2],col = "lightblue",pch = 21)
 points(c(52:335),ci0[,3],col = "lightblue",pch = 21)
 points(mtcars$hp[mtcars$am==0],mtcars$mpg[mtcars$am==0],col = "darkgreen", bg = "darkgreen",pch = 22)
-text(0.5,0.5,"Data and model, with Confidence Interval",cex=2,font=2)
+
 plot(c(50,340),c(0,30), type = "n", xlab="hp|am=1", ylab= "mpg", main= "CI, am =1,manual") #set up
 points(c(52:335),ci1[,1],col = "red", bg = "red",pch = 21)
 points(c(52:335),ci1[,2],col = "orange",pch = 21)
