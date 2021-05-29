@@ -1,0 +1,134 @@
+---
+title: "Motor Trend Regression Analysis"
+author: "Georgeanne Purvinis"
+date: "5/28/2021"
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Executive Summary
+This analysis uses a *Motor Trend*'s dataset called mtcars to answer two questions about vehicles' miles per gallon (MPG) and the type of transmission, specifically:
+
+* *“Is an automatic or manual transmission better for MPG?”* The model found that manual transmission is better for mpg, for a given horse-power vehicle.
+
+* *"Quantify the MPG difference between automatic and manual transmissions."* The model found that mpg will increase by 5.2771 when going from automatic (am = 0) to manual transmission (am = 1), for a given (constant) horse-power (hp). Using transmission type alone was insufficient to predict the mpg.
+
+The analysis used multiple regression analysis to find a relationship between MPG and transmission (automatic vs. manual) while taking into account possible confounding variables such as weight (wt), number of cylinders (cyl), horse-power (hp), and more. The validity of each model tested is checked by looking at plots of residuals and checking goodness of fit with p-values. The Principal of Parsimony, i.e. the model should contain the smallest number of variables necessary to fit the data, is also respected. Variables are added in a nested fashion to perform a stepwise regression.
+
+## Data Analysis
+
+```{r Initialization, include = FALSE}
+data(mtcars)
+#The analysis requires loading the data(mtcars) and needed packages of ggplot2 and GGally
+library(ggplot2)
+#install.packages("GGally")
+#install.packages("rgl")
+require(GGally)
+```
+### Exploratory Analyses
+The mtcars dataset contains 32 observations of 11 variables. Exploring the data involved plotting each variable (predictor) and the MPG outcome, and also calculating the correlation between each predictor and outcome. This has the effect of showing which predictors are most correlated to the outcome. The R package GGally lets us look at this data in a matrix of plots, while also showing the correlation between each variable (i.e. wt and cyl are highly correlated). The plot is shown in the appendix. Another useful graphic just shows the correlations in a matrix, with dark colors showing strong correlations. From this plot (below) we see that cyl, disp, hp have the strongest correlation but are also correlated to each other. The type of transmission (am) appears to be a weaker correlation. 
+```{r exploratory,fig.dim = c(6, 2),echo = FALSE}
+g2 <- ggcorr(mtcars, method = c("everything","spearman"),nbreaks = 7)
+g2  <- g2 + ggtitle("correlation between variables")
+g2
+
+```
+
+### Strategy and Model Selection
+The strategy used for model selection consists of adding variables and checking if the estimated coefficients are largely unchanged after addition, and if the p-values are small. This is a stepwise process. Initially, we model mpg ~ am, then add the regressors cyl, disp, hp. The results for mpg ~ am and mpg ~ am + hp are shown below. More examples are in the appendix, including fitting all the regressors in the dataset.
+
+```{r modeling, echo = FALSE}
+fit1 <- lm(mpg ~ am , data=mtcars) #fit to am only
+signif(summary(fit1)$coef[,c(1,4)],digits =5) # missing regressors
+fit5 <- lm(mpg ~ am +  hp ,data=mtcars)
+signif(summary(fit5)$coef[,c(1,4)],digits =5)
+# The model fit5 has the lowest p-values for the regresssors of all models attempted.
+```
+The best model is fit5. The model becomes: mpg = 26.585 + 5.2771am + -0.058888hp.The model means that mpg will increase by 5.2771 when going from automatic to manual transmission, for a given (constant) hp.
+
+### Diagnostics and Checking Assumptions
+Plots of the residuals versus fitted values and residuals versus independent variables are a standard method of checking if model assumptions are violated. The assumptions are 1) the errors are independent, 2) the errors have mean 0, 3) the errors all have about the same variance, and 4) the errors are normally distributed. The plots do not have any serious violations of the model assumptions.The plots may be viewed in the appendix.
+
+### Uncertainty in Results
+The parameter R^2 explains the percentage of variation in the regression model, which is 78% for this model. It is calculated from summary(fit5)$r.squared.
+
+Lastly, the model is fit to the data and the confidence intervals are shown. Since there are two regressors, am and hp,and am takes on only two values, the model is used twice: for the case when am =0 (auto transmission and when am=1 (manual)). The model and data fit well with very few points outside the confidence interval. The plot for am=1 (manual) is shifted higher than for am =0 auto transmission, indicating higher mpg.
+
+
+```{r,include = FALSE}
+newhp0 <- data.frame(hp =c(52:335), am = 0)
+newhp1 <- data.frame(hp =c(52:335), am = 1)
+ci0 <- predict(fit5,newdata= newhp0, interval = "confidence")
+ci1 <- predict(fit5,newdata= newhp1, interval = "confidence")
+```
+
+```{r, fig.show="hold",fig.dim = c(6, 3),echo = FALSE}
+
+par(mfrow=c(1,2)) #set up for two plots
+plot(c(50,340),c(0,30), type = "n", xlab="hp|am=0", ylab= "mpg", main= "CI, am =0,auto") #set up
+points(c(52:335),ci0[,1],col = "black", bg = "black",pch = 21)
+points(c(52:335),ci0[,2],col = "lightblue",pch = 21)
+points(c(52:335),ci0[,3],col = "lightblue",pch = 21)
+points(mtcars$hp[mtcars$am==0],mtcars$mpg[mtcars$am==0],col = "darkgreen", bg = "darkgreen",pch = 22)
+plot(c(50,340),c(0,30), type = "n", xlab="hp|am=1", ylab= "mpg", main= "CI, am =1,manual") #set up
+points(c(52:335),ci1[,1],col = "red", bg = "red",pch = 21)
+points(c(52:335),ci1[,2],col = "orange",pch = 21)
+points(c(52:335),ci1[,3],col = "orange",pch = 21)
+points(mtcars$hp[mtcars$am==1],mtcars$mpg[mtcars$am==1],col = "darkgreen", bg = "darkgreen",pch = 22)
+
+```
+
+## Appendix
+
+### Total dataset correlation matrix and data scatter plots
+```{r, echo = FALSE}
+g1 <- ggpairs(mtcars,lower = list(continuous = wrap("points")),ggplot2::aes(colour=factor(am)))
+g1 <- g1 + ggtitle("Data and correlation matrix, colored by regressor 'am'")
+suppressWarnings(suppressMessages(print(g1)))
+#png(filename = "mtcarsDataCorrelation.png")
+#print(g1)
+#dev.off()
+```
+### Model Selection Iterations
+```{r ,echo = FALSE}
+print("mpg ~ am + cyl")
+fit2 <- lm(mpg ~ am + cyl ,data=mtcars)
+signif(summary(fit2)$coef[,c(1,4)],digits =5)
+print("p-value for am coef is not as likely as for cyl. Cyl has more importance")
+print("mpg ~ am + cyl + wt")
+fit3 <- lm(mpg ~ am + cyl + wt, data=mtcars)
+signif(summary(fit3)$coef[,c(1,4)],digits =5) 
+print("p-value for am > 0.05, which suggests am term may not be necessary to predict mpg. cyl and wt are correlated, so one may be sufficient")
+#fit4 <- lm(mpg ~ am + wt , data=mtcars)
+#signif(summary(fit4)$coef[,c(1,4)],digits =5) 
+#print("not as good as am +cyl by am p-value ")
+#fit5 <- lm(mpg ~ am +  hp ,data=mtcars)
+#signif(summary(fit5)$coef[,c(1,4)],digits =5)
+#print("ohhh this is the best yet!")
+#fit6 <- lm(mpg ~ am + wt +hp, data=mtcars)
+#signif(summary(fit6)$coef[,c(1,4)],digits =5) 
+#print("hp and wt must be correlated (and they are)")
+#print("mpg ~ am + wt +hp + cyl")
+#fit7 <- lm(mpg ~ am + wt +hp + cyl, data=mtcars)
+#signif(summary(fit7)$coef[,c(1,4)],digits =5) 
+#print("Indicates not independant regressors. hp coeffient did not change much from fit6, indicating hp coefficient is reasonable")
+fitall <- lm(mpg ~ . , data=mtcars)
+signif(summary(fitall)$coef[,c(1,4)],digits =5) 
+#print("Indicates using all regressors is redundant")
+```
+
+### Diagnostics and Checking Assumptions
+```{r, fig.show="hold",fig.dim = c(6, 3), echo = FALSE}
+par(mfrow=c(1,3))
+plot(predict(fit5),resid(fit5),main = "fitted values vs. residuals")
+plot(mtcars$am,resid(fit5), main = "am variable vs. residuals")
+plot(mtcars$hp,resid(fit5), main = "hp vs. residuals")
+
+```
+
+```{r}
+# Errors are independent indicated by p-values near 0
+mean(resid(fit5)) # 2) residuals have mean 0
+# 3,4) Not enough data to test the variances at each mpg point
+```
